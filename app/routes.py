@@ -1,7 +1,12 @@
-from flask import render_template, redirect, flash, url_for
+from datetime import datetime
+from uuid import uuid4
 
-from app import app
+from flask import render_template, redirect, flash, url_for
+from werkzeug.security import generate_password_hash
+
+from app import app, db
 from app.forms import LoginForm
+from app.models import User, Post
 
 
 @app.route("/")
@@ -33,3 +38,15 @@ def login():
             form.username.data, form.remember_me.data))
         return redirect(url_for('index'))
     return render_template('login.html', title='Sign In', form=form)
+
+
+@app.route("/add", methods=['GET', 'POST'])
+def add():
+    user = User(
+        username='Dima',
+        email='dimatasmuk@gmail.com',
+        password_hash=generate_password_hash('dima'))
+    user.save()
+
+    post = Post(date=datetime.now(), author=user, text="Hello")
+    post.save()
