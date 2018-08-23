@@ -1,14 +1,19 @@
 # -*- coding: UTF-8 -*-
+from datetime import datetime
+
 from app import login
 from flask_login import UserMixin
 from mongoengine import StringField, Document, ReferenceField, NULLIFY, DateTimeField
 from werkzeug.security import generate_password_hash, check_password_hash
+from hashlib import md5
 
 
 class User(UserMixin, Document):
     username = StringField(required=True, unique=True)
     email = StringField(required=True, unique=True)
     password_hash = StringField(required=True)
+    about_me = StringField(max_length=140)
+    last_seen = DateTimeField(default=datetime.utcnow)
 
     def __repr__(self):
         return '<User {} ({})>'.format(self.username, self.email)
@@ -18,6 +23,11 @@ class User(UserMixin, Document):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def avatar(self, size):
+        digest = md5(self.email.lower().encode('utf-8')).hexdigest()
+        return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
+            digest, size)
 
 
 class Post(Document):
