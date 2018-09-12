@@ -23,7 +23,7 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.objects.get(username=form.username.data)
+        user = User.objects(username=form.username.data).first()
         if user is None or not user.check_password(form.password.data):
             flash(category='error', message='Invalid username or password')
             return redirect(url_for('login'))
@@ -69,7 +69,7 @@ def user(username):
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    form = EditProfileForm()
+    form = EditProfileForm(current_user.username)
     if form.validate_on_submit():
         current_user.username = form.username.data
         current_user.about_me = form.about_me.data
