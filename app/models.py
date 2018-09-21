@@ -3,7 +3,7 @@ from datetime import datetime
 
 from app import login
 from flask_login import UserMixin
-from mongoengine import StringField, Document, ReferenceField, NULLIFY, DateTimeField
+from mongoengine import StringField, Document, ReferenceField, NULLIFY, DateTimeField, ListField
 from werkzeug.security import generate_password_hash, check_password_hash
 from hashlib import md5
 
@@ -14,6 +14,8 @@ class User(UserMixin, Document):
     password_hash = StringField(required=True)
     about_me = StringField(max_length=140)
     last_seen = DateTimeField(default=datetime.utcnow)
+    followers = ListField(ReferenceField('self'))
+    following = ListField(ReferenceField('self'))
 
     def __repr__(self):
         return '<User {} ({})>'.format(self.username, self.email)
@@ -29,6 +31,18 @@ class User(UserMixin, Document):
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
             digest, size)
 
+    def follow(self, user):
+        if not self.is_following(user):
+            self.following.append(user)
+            self.save()
+
+    def unfollow(self, user):
+        if self.is_following(user):
+            self.following.remove(user)
+            self.save()
+
+    def is_following(self, user):
+        return user in self.following
 
 class Post(Document):
     text = StringField(required=True)

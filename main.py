@@ -20,6 +20,19 @@ from app import app
 #         )
 #         mail_handler.setLevel(logging.error)
 #         app.logger.addHandel(mail_handler)
+from app.models import User
 
 if __name__ == '__main__':
-    app.run()
+    dima = User.objects.get(username="Dima")
+    olha = User.objects.get(username="Olha")
+    # olha.follow(dima)
+    # olha.save()
+    petro = User.objects.get(username="Petro")
+    petro.follow(dima)
+    # petro.save()
+    dima.follow(olha)
+    print(dima.email, olha.email, petro.email)
+    print(olha.following)
+    print(User.objects(following__contains=dima))
+    print(User.objects(following__contains=olha))
+    # app.run()
