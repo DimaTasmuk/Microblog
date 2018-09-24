@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 from datetime import datetime
 
-from app import login
+from app import login, app
 from flask_login import UserMixin
 from mongoengine import StringField, Document, ReferenceField, NULLIFY, DateTimeField, ListField, Q
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -49,8 +49,9 @@ class User(UserMixin, Document):
     def get_followers(self):
         return User.objects(followed=self)
 
-    def get_followed_posts(self):
-        return Post.objects(Q(author__in=self.followed) | Q(author=self))
+    def get_followed_posts(self, page):
+        skips = app.config['POSTS_PER_PAGE'] * (page - 1)
+        return Post.objects(Q(author__in=self.followed) | Q(author=self)).skip(skips).limit(app.config['POSTS_PER_PAGE'])
 
 
 class Post(Document):
@@ -60,6 +61,8 @@ class Post(Document):
 
     def __repr__(self):
         return '<Post (author: {}, body: {}, date: {})>'.format(self.author, self.body, self.date)
+
+
 
 
 @login.user_loader

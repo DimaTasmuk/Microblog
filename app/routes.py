@@ -14,12 +14,13 @@ from app.models import User, Post
 @app.route("/index", methods=['GET', 'POST'])
 @login_required
 def index():
+    page = request.args.get("page", 1, type=int)
     form = PostForm()
     if form.validate_on_submit():
         post = Post(body=form.post.data, author=current_user.id)
         post.save()
         return redirect(url_for('index'))
-    posts = current_user.get_followed_posts()
+    posts = current_user.get_followed_posts(page)
     return render_template('index.html', title='Home Page', form=form, posts=posts)
 
 
@@ -124,5 +125,7 @@ def unfollow(username):
 
 @app.route('/explore')
 def explore():
-    posts = Post.objects()
+    page = request.args.get("page", 1, type=int)
+    skips = app.config['POSTS_PER_PAGE'] * (page - 1)
+    posts = Post.objects().skip(skips).limit(app.config['POSTS_PER_PAGE'])
     return render_template('index.html', title='Explore', posts=posts)

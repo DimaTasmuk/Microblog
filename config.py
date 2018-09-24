@@ -6,6 +6,8 @@ from credentials import GMAIL_USERNAME, GMAIL_PASSWORD, EMAIL_ADMINS
 class Config(object):
     SECRET_KEY = "mDAR8eK9buA62NXqLsMtaDvHLLeHapGms4hgh34h5rcwQ99fH9RLL"
 
+    POSTS_PER_PAGE = 3
+
     MAIL_SERVER = "smtp.gmail.com"
     MAIL_PORT = "587"
     MAIL_USE_TLS = 1
