@@ -6,15 +6,21 @@ from flask import render_template, redirect, flash, url_for, request, abort
 from werkzeug.urls import url_parse
 
 from app import app
-from app.forms import LoginForm, RegistrationForm, EditProfileForm
-from app.models import User
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
+from app.models import User, Post
 
 
-@app.route("/")
-@app.route("/index")
+@app.route("/", methods=['GET', 'POST'])
+@app.route("/index", methods=['GET', 'POST'])
 @login_required
 def index():
-    return render_template('index.html', title='Home Page')
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(body=form.post.data, author=current_user.id)
+        post.save()
+        return redirect(url_for('index'))
+    posts = current_user.get_followed_posts()
+    return render_template('index.html', title='Home Page', form=form, posts=posts)
 
 
 @app.route("/login", methods=['GET', 'POST'])
@@ -61,10 +67,7 @@ def user(username):
     user = User.objects(username__iexact=username).first()
     if user is None:
         abort(404)
-    posts = [
-        {'author': user, 'body': 'Test post #1'},
-        {'author': user, 'body': 'Test post #2'}
-    ]
+    posts = Post.objects(author=user)
     return render_template("user.html", user=user, posts=posts)
 
 
@@ -117,3 +120,9 @@ def unfollow(username):
     current_user.unfollow(user)
     flash('You are not following {}!'.format(username))
     return redirect(url_for('user', username=username))
+
+
+@app.route('/explore')
+def explore():
+    posts = Post.objects()
+    return render_template('index.html', title='Explore', posts=posts)

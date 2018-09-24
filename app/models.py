@@ -3,7 +3,7 @@ from datetime import datetime
 
 from app import login
 from flask_login import UserMixin
-from mongoengine import StringField, Document, ReferenceField, NULLIFY, DateTimeField, ListField
+from mongoengine import StringField, Document, ReferenceField, NULLIFY, DateTimeField, ListField, Q
 from werkzeug.security import generate_password_hash, check_password_hash
 from hashlib import md5
 
@@ -49,14 +49,17 @@ class User(UserMixin, Document):
     def get_followers(self):
         return User.objects(followed=self)
 
+    def get_followed_posts(self):
+        return Post.objects(Q(author__in=self.followed) | Q(author=self))
+
 
 class Post(Document):
-    text = StringField(required=True)
+    body = StringField(required=True)
     author = ReferenceField(User, reverse_delete_rule=NULLIFY)
     date = DateTimeField()
 
     def __repr__(self):
-        return '<Post (author: {}, text: {}, date: {})>'.format(self.author, self.text, self.date)
+        return '<Post (author: {}, body: {}, date: {})>'.format(self.author, self.body, self.date)
 
 
 @login.user_loader
