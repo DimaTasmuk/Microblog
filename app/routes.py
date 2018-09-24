@@ -2,19 +2,25 @@ from datetime import datetime
 
 from flask_login import current_user, login_user, logout_user, login_required
 
-from flask import render_template, redirect, flash, url_for, request
+from flask import render_template, redirect, flash, url_for, request, abort
 from werkzeug.urls import url_parse
 
 from app import app
-from app.forms import LoginForm, RegistrationForm, EditProfileForm
-from app.models import User
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
+from app.models import User, Post
 
 
-@app.route("/")
-@app.route("/index")
+@app.route("/", methods=['GET', 'POST'])
+@app.route("/index", methods=['GET', 'POST'])
 @login_required
 def index():
-    return render_template('index.html', title='Home Page')
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(body=form.post.data, author=current_user.id)
+        post.save()
+        return redirect(url_for('index'))
+    posts = current_user.get_followed_posts()
+    return render_template('index.html', title='Home Page', form=form, posts=posts)
 
 
 @app.route("/login", methods=['GET', 'POST'])
@@ -23,7 +29,7 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.objects(username=form.username.data).first()
+        user = User.objects(username__iexact=form.username.data).first()
         if user is None or not user.check_password(form.password.data):
             flash(category='error', message='Invalid username or password')
             return redirect(url_for('login'))
@@ -58,18 +64,17 @@ def register():
 @app.route('/user/<username>')
 @login_required
 def user(username):
-    user = User.objects.get(username=username)
-    posts = [
-        {'author': user, 'body': 'Test post #1'},
-        {'author': user, 'body': 'Test post #2'}
-    ]
+    user = User.objects(username__iexact=username).first()
+    if user is None:
+        abort(404)
+    posts = Post.objects(author=user)
     return render_template("user.html", user=user, posts=posts)
 
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    form = EditProfileForm(current_user.username)
+    form = EditProfileForm()
     if form.validate_on_submit():
         current_user.username = form.username.data
         current_user.about_me = form.about_me.data
@@ -87,3 +92,37 @@ def before_request():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.utcnow()
         current_user.save()
+
+
+@app.route('/follow/<username>')
+def follow(username):
+    user = User.objects(username__iexact=username).first()
+    if user is None:
+        flash('User {} not found.'.format(username))
+        return redirect(url_for('index'))
+    if user == current_user:
+        flash("You cannot follow yourself")
+        return redirect(url_for('user', username=username))
+    current_user.follow(user)
+    flash('You are following {}!'.format(username))
+    return redirect(url_for('user', username=username))
+
+
+@app.route('/unfollow/<username>')
+def unfollow(username):
+    user = User.objects(username__iexact=username).first()
+    if user is None:
+        flash('User {} not found.'.format(username))
+        return redirect(url_for('index'))
+    if user == current_user:
+        flash("You cannot unfollow yourself")
+        return redirect(url_for('user', username=username))
+    current_user.unfollow(user)
+    flash('You are not following {}!'.format(username))
+    return redirect(url_for('user', username=username))
+
+
+@app.route('/explore')
+def explore():
+    posts = Post.objects()
+    return render_template('index.html', title='Explore', posts=posts)
