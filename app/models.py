@@ -14,11 +14,13 @@ class User(UserMixin, Document):
     password_hash = StringField(required=True)
     about_me = StringField(max_length=140)
     last_seen = DateTimeField(default=datetime.utcnow)
-    followers = ListField(ReferenceField('self'))
-    following = ListField(ReferenceField('self'))
+    followed = ListField(ReferenceField('self'))
+
+    def __str__(self):
+        return '<User {} ({})>'.format(self.username, [user.username for user in self.followed])
 
     def __repr__(self):
-        return '<User {} ({})>'.format(self.username, self.email)
+        return '<User {} ({})>'.format(self.username, [user.username for user in self.followed])
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -33,16 +35,20 @@ class User(UserMixin, Document):
 
     def follow(self, user):
         if not self.is_following(user):
-            self.following.append(user)
+            self.followed.append(user)
             self.save()
 
     def unfollow(self, user):
         if self.is_following(user):
-            self.following.remove(user)
+            self.followed.remove(user)
             self.save()
 
     def is_following(self, user):
-        return user in self.following
+        return user in self.followed
+
+    def get_followers(self):
+        return User.objects(followed=self)
+
 
 class Post(Document):
     text = StringField(required=True)
