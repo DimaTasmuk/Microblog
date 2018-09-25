@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 from datetime import datetime
 
+from Utils import Pagination
 from app import login, app
 from flask_login import UserMixin
 from mongoengine import StringField, Document, ReferenceField, NULLIFY, DateTimeField, ListField, Q
@@ -50,8 +51,8 @@ class User(UserMixin, Document):
         return User.objects(followed=self)
 
     def get_followed_posts(self, page):
-        skips = app.config['POSTS_PER_PAGE'] * (page - 1)
-        return Post.objects(Q(author__in=self.followed) | Q(author=self)).skip(skips).limit(app.config['POSTS_PER_PAGE'])
+        posts = Post.objects(Q(author__in=self.followed) | Q(author=self)).order_by('-date')
+        return Pagination(posts, page).paginate()
 
 
 class Post(Document):
@@ -62,7 +63,17 @@ class Post(Document):
     def __repr__(self):
         return '<Post (author: {}, body: {}, date: {})>'.format(self.author, self.body, self.date)
 
+    def __str__(self):
+        return '<Post (author: {}, body: {}, date: {})>'.format(self.author, self.body, self.date)
 
+    @staticmethod
+    def get_all_posts(page):
+        posts = Post.objects().order_by('-date')
+        return Pagination(posts, page).paginate()
+
+    @staticmethod
+    def get_user_posts(user):
+        return Post.objects(author=user).order_by('-date')
 
 
 @login.user_loader

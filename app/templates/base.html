@@ -3,12 +3,12 @@
     {% if title %}
         <title>{{ title }}</title>
     {% else %}
-        <title>My Budget</title>
+        <title>Microblog</title>
     {% endif %}
 </head>
 <body>
     <div>
-        My Budget:
+        Microblog:
         <a href="{{ url_for('index') }}">Home</a>
         <a href="{{ url_for('explore') }}">Explore</a>
         {% if current_user.is_anonymous %}

@@ -5,6 +5,7 @@ from flask_login import current_user, login_user, logout_user, login_required
 from flask import render_template, redirect, flash, url_for, request, abort
 from werkzeug.urls import url_parse
 
+from Utils import Pagination
 from app import app
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
 from app.models import User, Post
@@ -15,13 +16,18 @@ from app.models import User, Post
 @login_required
 def index():
     page = request.args.get("page", 1, type=int)
+
     form = PostForm()
     if form.validate_on_submit():
-        post = Post(body=form.post.data, author=current_user.id)
+        post = Post(body=form.post.data, author=current_user.id, date=datetime.utcnow())
         post.save()
         return redirect(url_for('index'))
+
     posts = current_user.get_followed_posts(page)
-    return render_template('index.html', title='Home Page', form=form, posts=posts)
+    pagination = Pagination(posts, page)
+    next_url = url_for('index', page=pagination.next_num()) if pagination.has_next() else None
+    prev_url = url_for('index', page=pagination.prev_num()) if pagination.has_prev() else None
+    return render_template('index.html', title='Home Page', form=form, posts=posts, next_url=next_url, prev_url=prev_url)
 
 
 @app.route("/login", methods=['GET', 'POST'])
@@ -29,6 +35,7 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     form = LoginForm()
+
     if form.validate_on_submit():
         user = User.objects(username__iexact=form.username.data).first()
         if user is None or not user.check_password(form.password.data):
@@ -43,6 +50,7 @@ def login():
 
 
 @app.route('/logout')
+@login_required
 def logout():
     logout_user()
     return redirect(url_for('index'))
@@ -65,11 +73,18 @@ def register():
 @app.route('/user/<username>')
 @login_required
 def user(username):
+    page = request.args.get("page", 1, type=int)
+
     user = User.objects(username__iexact=username).first()
     if user is None:
         abort(404)
-    posts = Post.objects(author=user)
-    return render_template("user.html", user=user, posts=posts)
+
+    posts = Post.get_user_posts(user)
+    pagination = Pagination(posts, page)
+    posts = pagination.paginate()
+    next_url = url_for('user', username=user.username, page=pagination.next_num()) if pagination.has_next() else None
+    prev_url = url_for('user', username=user.username, page=pagination.prev_num()) if pagination.has_prev() else None
+    return render_template("user.html", user=user, posts=posts, next_url=next_url, prev_url=prev_url)
 
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
@@ -96,6 +111,7 @@ def before_request():
 
 
 @app.route('/follow/<username>')
+@login_required
 def follow(username):
     user = User.objects(username__iexact=username).first()
     if user is None:
@@ -110,6 +126,7 @@ def follow(username):
 
 
 @app.route('/unfollow/<username>')
+@login_required
 def unfollow(username):
     user = User.objects(username__iexact=username).first()
     if user is None:
@@ -124,8 +141,12 @@ def unfollow(username):
 
 
 @app.route('/explore')
+@login_required
 def explore():
     page = request.args.get("page", 1, type=int)
-    skips = app.config['POSTS_PER_PAGE'] * (page - 1)
-    posts = Post.objects().skip(skips).limit(app.config['POSTS_PER_PAGE'])
-    return render_template('index.html', title='Explore', posts=posts)
+
+    posts = Post.get_all_posts(page)
+    pagination = Pagination(posts, page)
+    next_url = url_for('explore', page=pagination.next_num()) if pagination.has_next() else None
+    prev_url = url_for('explore', page=pagination.prev_num()) if pagination.has_prev() else None
+    return render_template('index.html', title='Explore', posts=posts, next_url=next_url, prev_url=prev_url)
