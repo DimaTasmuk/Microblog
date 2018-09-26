@@ -7,8 +7,9 @@ from werkzeug.urls import url_parse
 
 from Utils import Pagination
 from app import app
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm, ResetPasswordRequestForm
 from app.models import User, Post
+from app.email import send_password_reset_email
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -150,3 +151,17 @@ def explore():
     next_url = url_for('explore', page=pagination.next_num()) if pagination.has_next() else None
     prev_url = url_for('explore', page=pagination.prev_num()) if pagination.has_prev() else None
     return render_template('index.html', title='Explore', posts=posts, next_url=next_url, prev_url=prev_url)
+
+
+@app.route('/reset_password_request', methods=['GET', 'POST'])
+def reset_password_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = ResetPasswordRequestForm()
+    if form.validate_on_submit():
+        user = User.objects(email=form.email.data).first()
+        if user:
+            send_password_reset_email(user)
+        flash('Check your email for the instructions to reset your password')
+        return redirect(url_for('login'))
+    return render_template('reset_password_request.html', title='Reset Password', form=form)

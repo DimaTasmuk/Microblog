@@ -1,6 +1,6 @@
 import os
 
-from credentials import GMAIL_USERNAME, GMAIL_PASSWORD, EMAIL_ADMINS
+from credentials import GMAIL_USERNAME, GMAIL_PASSWORD, ADMIN_EMAIL
 
 
 class Config(object):
@@ -13,6 +13,6 @@ class Config(object):
     MAIL_USE_TLS = 1
     MAIL_USERNAME = GMAIL_USERNAME
     MAIL_PASSWORD = GMAIL_PASSWORD
-    ADMINS = EMAIL_ADMINS
+    ADMIN = ADMIN_EMAIL
 
     APP_PATH = os.path.dirname(os.path.abspath(__file__))

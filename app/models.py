@@ -1,5 +1,8 @@
 # -*- coding: UTF-8 -*-
 from datetime import datetime
+from time import time
+
+import jwt
 
 from Utils import Pagination
 from app import login, app
@@ -53,6 +56,19 @@ class User(UserMixin, Document):
     def get_followed_posts(self, page):
         posts = Post.objects(Q(author__in=self.followed) | Q(author=self)).order_by('-date')
         return Pagination(posts, page).paginate()
+
+    def get_reset_password_token(self, expires_in=600):
+        return jwt.encode(
+            {'reset_password': self.id, 'exp': time() + expires_in},
+            app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
+
+    @staticmethod
+    def verify_reset_password_token(token):
+        try:
+            id = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])['reset_password']
+        except:
+            return
+        return User.objects(id=id).first()
 
 
 class Post(Document):
