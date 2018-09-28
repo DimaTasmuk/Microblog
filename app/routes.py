@@ -5,7 +5,7 @@ from flask_login import current_user, login_user, logout_user, login_required
 from flask import render_template, redirect, flash, url_for, request, abort
 from werkzeug.urls import url_parse
 
-from Utils import Pagination
+from utils import Pagination
 from app import app
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm, ResetPasswordRequestForm, \
     ResetPasswordForm
