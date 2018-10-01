@@ -10,7 +10,9 @@
             <td>
                 <h1>User: {{ user.username }}</h1>
                 {% if user.about_me %}<p>{{ user.about_me }}</p>{% endif %}
-                {% if user.last_seen %}<p>Last seen on: {{ user.last_seen }}</p>{% endif %}
+                {% if user.last_seen %}
+                    <p>Last seen on: {{ moment(user.last_seen).format('LLL') }}</p>
+                {% endif %}
 
                 <p>{{ len(user.get_followers()) }} followers, {{ len(user.followed) }} following</p>
 
