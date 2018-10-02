@@ -4,7 +4,7 @@ from time import time
 
 import jwt
 
-from utils import Pagination
+from pagination import Pagination
 from app import login, app
 from flask_login import UserMixin
 from mongoengine import StringField, Document, ReferenceField, NULLIFY, DateTimeField, ListField, Q

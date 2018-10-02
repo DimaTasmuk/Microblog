@@ -15,4 +15,6 @@ class Config(object):
     MAIL_PASSWORD = GMAIL_PASSWORD
     ADMIN = ADMIN_EMAIL
 
+    LANGUAGES = ['ru', 'en', 'ua']
+
     APP_PATH = os.path.dirname(os.path.abspath(__file__))

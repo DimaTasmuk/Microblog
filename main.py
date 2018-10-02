@@ -1,5 +1,4 @@
-
-from app import app
+from app import app, cli
 
 # from logging.handlers import SMTPHandler
 # if not app.debug:
